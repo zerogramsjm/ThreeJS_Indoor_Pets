@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Be Content</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<script src="build/three.js"></script>
+		<script src="https://code.jquery.com/jquery-1.10.2.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<script src="js/timing/jquery-timing.js"></script>
+		<script src="js/timing/jquery-timing.min.js"></script>
+		
+		<script src="build/three.interaction.js"></script>
+		<script src="js/OrbitControls.js"></script>
+		<script src="js/TrackballControls.js"></script>
+		<script src="js/loaders/MTLLoader.js"></script>
+		<script src="js/libs/dat.gui.min.js"></script>
+		<script src="js/loaders/LoaderSupport.js"></script>
+		<script src="js/loaders/OBJLoader2.js"></script>
+		<link rel="stylesheet" type="text/css" href="menus.css">
+
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #fff;
+				color: #fff;
+				margin: 0 0 0 0;
+				padding: 0 0 0 0;
+				border: none;
+				cursor: default;
+			}
+			#info {
+				color: #fff;
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display:block;
+			}
+			#info a {
+				color: #f00;
+				font-weight: bold;
+				text-decoration: underline;
+				cursor: pointer
+			}
+			#glFullscreen {
+				width: 100%;
+				height: 100vh;
+				min-width: 640px;
+				min-height: 360px;
+				position: relative;
+				overflow: hidden;
+				z-index: 0;
+			}
+			#example {
+				width: 100%;
+				height: 100%;
+				top: 0;
+				left: 0;
+				background-color: #fff;
+			}
+			#feedback {
+				color: darkorange;
+			}
+			#dat {
+				user-select: none;
+				position: absolute;
+				left: 0;
+				top: 0;
+				z-Index: 200;
+				}
+			#myProgress {
+			  width: 100%;
+			  background-color: grey;
+			}
+
+			#myBar {
+			  width: 1%;
+			  height: 30px;
+			  background-color: green;
+			}
+
+			.instruction{
+			  position: fixed;
+			  width: 100%;
+			  height: 100%;
+			  top: 0;
+			  z-index: 2;
+			  background-color: #EAD9D1;
+			  display: none;
+			}
+
+			.instruction img{
+				max-width: 600px;
+				max-height: 600px;
+				min-width: 600px;
+				min-height: 600px;
+			  margin: 0;
+			  position: absolute;
+			  top: 50%;
+			  left: 50%;
+			  transform: translate(-50%, -50%);
+			}
+
+			.body{
+				display: none;
+			}
+
+			a {
+			  color: inherit; /* blue colors for links too */
+			  text-decoration: inherit; /* no underline */
+			}
+
+			#loading{
+			  position: fixed;
+			  width: 100%;
+			  height: 100%;
+			  top: 0;
+			  z-index: 1000;
+			  background-color: #EAD9D1;
+			}
+
+			#loading img{
+			  max-width: 600px;
+			  max-height: 600px;
+		      min-width: 600px;
+			  min-height: 600px;
+			  margin: 0;
+			  position: absolute;
+			  top: 50%;
+			  left: 50%;
+			  transform: translate(-50%, -50%);
+			}
+
+			@-webkit-keyframes rotating {
+			    from {
+			        -webkit-transform: rotate(0deg);
+			    }
+			    to {
+			        -webkit-transform: rotate(360deg);
+			    }
+			}
+
+			#preloader {
+			    position: absolute;
+			    left: 50%;
+			    top: 75%;
+			    width: 48px;
+			    height: 48px;
+			    margin-left: -24px;
+			    margin-top: -24px;
+			    border: #D05956 4px solid;
+			    border-left-color: transparent;
+			    border-radius: 50%;
+			    -webkit-animation: rotating 1s linear infinite;
+			}
+
+		</style>
+
+<script type="text/javascript">
+$(document).ready(function(){
+	$("#loading").fadeIn(1000);
+	$("#loading").delay(15000).fadeOut(1000);
+	$("#instruction").fadeIn(16000);
+    $("#instruction").delay(5000);
+    $("#instruction").fadeOut(750);
+  });
+</script>
+
+	<body id="body" style="overflow: hidden;">
+
+		<div class="loading" id="loading">
+			
+			<img id="loading-img" src="loading.png" width="100%" height="100%" >
+<div id="preloader"></div>
+		</div>
+
+		<div class="instruction" id="instruction">
+			
+			<img src="instruction-01.png" width="100%" height="100%" >
+
+		</div>
+
+		<div class="glFullscreen" id="glFullscreen">
+			<canvas id="example"></canvas>
+		</div>
+
+		<div id="info">
+			<a href="http://threejs.org" target="_blank" rel="noopener">
+			<div id="feedback"></div>
+		</div>
+
+		<script type="text/javascript">
+			window.ImageBitmap = window.ImageBitmap || function () { return null }
+
+			var container;
+			var camera, scene, controls, renderer;
+			var mouseX = 0, mouseY = 0;
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+			var object;
+
+			'use strict';
+
+			var OBJLoader2Example = function ( elementToBindTo ) {
+
+		this.renderer = new THREE.WebGLRenderer({
+          canvas: document.querySelector('#example'),
+          logarithmicDepthBuffer: true,
+          antialias: true,
+        });
+
+				this.canvas = elementToBindTo;
+				this.aspectRatio = 1;
+				this.recalcAspectRatio();
+
+				this.scene = new THREE.Scene();
+				this.cameraDefaults = {
+					posCamera: new THREE.Vector3( 150, 150, 2000 ),
+					posCameraTarget: new THREE.Vector3( 0, 0, 0 ),
+					near: 0.1,
+					far: 100000,
+					fov: 30
+				};
+				this.cameraTarget = this.cameraDefaults.posCameraTarget;
+
+				this.controls = null;
+
+			};
+
+			OBJLoader2Example.prototype = {
+
+				constructor: OBJLoader2Example,
+
+				initGL: function () {
+					this.renderer = new THREE.WebGLRenderer( {
+						canvas: this.canvas,
+						antialias: true,
+						autoClear: true,
+						logarithmicDepthBuffer: true,
+					} );
+					this.renderer.setClearColor( 0x050505 );
+
+					this.scene = new THREE.Scene();
+
+					this.camera = new THREE.PerspectiveCamera( this.cameraDefaults.fov, this.aspectRatio, this.cameraDefaults.near, this.cameraDefaults.far );
+					this.resetCamera();
+					this.controls = new THREE.TrackballControls( this.camera, this.renderer.domElement );
+
+        			var interaction = new THREE.Interaction(this.renderer, this.scene, this.camera);
+
+					var ambientLight = new THREE.AmbientLight( 0XFFFFFF );
+					var directionalLight1 = new THREE.DirectionalLight( 0XFFFFFF );
+					var directionalLight2 = new THREE.DirectionalLight( 0XFFFFFF );
+
+					directionalLight1.position.set( 0, 10, 50 );
+					directionalLight2.position.set( 0, 25, 20 );
+
+					this.scene.add( directionalLight1 );
+					this.scene.add( directionalLight2 );
+				},
+
+				initContent: function (begin) {
+
+// - - - - - - -
+
+					var modelName1 = 'section1';
+					// this._reportProgress( { detail: { text: 'Loading: ' + modelName } } );
+					var scope = this;
+					var objLoader = new THREE.OBJLoader2();
+					var onLoadMtl = function ( materials ) {
+						objLoader.setModelName( modelName1 );
+						objLoader.setMaterials( materials );
+						objLoader.setLogging( true, true );
+						objLoader.load( 'models/section1.obj', callbackOnLoad, null, null, null, false );
+					}
+					objLoader.loadMtl( 'models/section1.mtl', null, onLoadMtl );
+
+					var modelName3 = 'section2';
+					// this._reportProgress( { detail: { text: 'Loading: ' + modelName } } );
+					var scope = this;
+					var objLoader3 = new THREE.OBJLoader2();
+					var onLoadMtl3 = function ( materials ) {
+						objLoader3.setModelName( modelName3 );
+						objLoader3.setMaterials( materials );
+						objLoader3.setLogging( true, true );
+						objLoader3.load( 'models/section2.obj', callbackOnLoad, null, null, null, false );
+					}
+					objLoader3.loadMtl( 'models/section2.mtl', null, onLoadMtl3 );
+
+					var modelName4 = 'section3';
+					// this._reportProgress( { detail: { text: 'Loading: ' + modelName } } );
+					var scope = this;
+					var objLoader4 = new THREE.OBJLoader2();
+					var onLoadMtl4 = function ( materials ) {
+						objLoader4.setModelName( modelName4 );
+						objLoader4.setMaterials( materials );
+						objLoader4.setLogging( true, true );
+						objLoader4.load( 'models/section3.obj', callbackOnLoad, null, null, null, false );
+					}
+					objLoader4.loadMtl( 'models/section3.mtl', null, onLoadMtl4 );
+
+					var modelName5 = 'section4';
+					// this._reportProgress( { detail: { text: 'Loading: ' + modelName } } );
+					var scope = this;
+					var objLoader5 = new THREE.OBJLoader2();
+					var onLoadMtl5 = function ( materials ) {
+						objLoader5.setModelName( modelName5 );
+						objLoader5.setMaterials( materials );
+						objLoader5.setLogging( true, true );
+						objLoader5.load( 'models/section4.obj', callbackOnLoad, null, null, null, false );
+					}
+					objLoader5.loadMtl( 'models/section4.mtl', null, onLoadMtl5 );
+
+					var modelName6 = 'section6';
+					// this._reportProgress( { detail: { text: 'Loading: ' + modelName } } );
+					var scope = this;
+					var objLoader6 = new THREE.OBJLoader2();
+					var onLoadMtl6 = function ( materials ) {
+						objLoader6.setModelName( modelName6 );
+						objLoader6.setMaterials( materials );
+						objLoader6.setLogging( true, true );
+						objLoader6.load( 'models/land.obj', callbackOnLoad, null, null, null, false );
+					}
+					objLoader6.loadMtl( 'models/land.mtl', null, onLoadMtl6 );
+
+// - - - - - - - - - - - 
+
+					var modelName2 = 'path';
+					// this._reportProgress( { detail: { text: 'Loading: ' + modelName } } );
+					var scope = this;
+					var objLoader2 = new THREE.OBJLoader2();
+					var onLoadMtl2 = function ( materials ) {
+						objLoader2.setModelName( modelName2 );
+						objLoader2.setMaterials( materials );
+						objLoader2.setLogging( true, true );
+						objLoader2.load( 'models/path.obj', callbackOnLoad, null, null, null, false );
+					}
+					objLoader2.loadMtl( 'models/path.mtl', null, onLoadMtl2 );
+
+// - - - - - - - - - - - 
+
+					var modelName7 = 'section5';
+					// this._reportProgress( { detail: { text: 'Loading: ' + modelName } } );
+					var scope = this;
+					var objLoader7 = new THREE.OBJLoader2();
+					var onLoadMtl7 = function ( materials ) {
+						objLoader7.setModelName( modelName7 );
+						objLoader7.setMaterials( materials );
+						objLoader7.setLogging( true, true );
+						objLoader7.load( 'models/section5.obj', callbackOnLoad, null, null, null, false );
+					}
+					objLoader7.loadMtl( 'models/section5.mtl', null, onLoadMtl7 );
+				
+					var callbackOnLoad = function ( event ) {
+						scope.scene.add( event.detail.loaderRootNode );
+						console.log( 'done ' + event.detail.modelName );
+						scope._reportProgress( { detail: { text: '' } } );
+					};
+
+					var rollerloaded = function ( event ) {
+						scope.scene.add( event.detail.loaderRootNode );
+						console.log( 'ROLLERLOADED ' + event.detail.modelName );
+						scope._reportProgress( { detail: { text: '' } } );
+
+					};
+
+//CLICK
+
+// - - - - - - - 
+
+//click
+
+//CUTIE 
+var material1 = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 0});
+
+var materialtest = new THREE.MeshLambertMaterial({color: 0xff0000, transparent: true, opacity: 1});
+
+        var cutie = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 700, 700),material1
+        );
+        cutie.cursor = 'pointer';
+        cutie.position.y = 0;
+        cutie.position.z = -2550;
+        cutie.position.x = 1600;
+        cutie.name = 'cutie';
+        this.scene.add( cutie );
+        cutie.on('touchend', function(ev) {
+          console.log('CLICKCUTIE');
+ var url = "http://www.becontentcity.com/mobile/menus/cutiepie.html";
+ window.open(url, '_blank');
+        });
+
+//CHURCH
+
+        var church = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 900, 700),material1
+        );
+        church.cursor = 'pointer';
+        church.position.y = 0;
+        church.position.z = -1500;
+        church.position.x = 1600;
+        church.name = 'church';
+        this.scene.add( church );
+        church.on('touchend', function(ev) {
+          console.log('CLICKCHURCH');
+ var url = "http://www.becontentcity.com/mobile/menus/strange.html";
+ window.open(url, '_blank');
+        });
+
+//SMG
+
+        var smg = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 700, 700),material1
+        );
+        smg.cursor = 'pointer';
+        smg.position.y = 0;
+        smg.position.z = -1000;
+        smg.position.x = 2850;
+        smg.name = 'smg';
+        this.scene.add( smg );
+        smg.on('touchend', function(ev) {
+          console.log('CLICKSMG');
+ var url = "http://www.becontentcity.com/mobile/menus/smg.html";
+ window.open(url, '_blank');
+        });
+
+//SLUSHI
+
+        var slush = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 700, 700),material1
+        );
+        slush.cursor = 'pointer';
+        slush.position.y = 0;
+        slush.position.z = -1850;
+        slush.position.x = 3850;
+        slush.name = 'slush';
+        this.scene.add( slush );
+        slush.on('touchend', function(ev) {
+          console.log('CLICKSLUSH');
+ var url = "http://www.becontentcity.com/mobile/menus/slush.html";
+ window.open(url, '_blank');
+        });
+
+//GOOD 
+
+        var good = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 700, 700),material1
+        );
+        good.cursor = 'pointer';
+        good.position.y = 0;
+        good.position.z = -3450;
+        good.position.x = 1700;
+        good.name = 'good';
+        this.scene.add( good );
+        good.on('touchend', function(ev) {
+          console.log('CLICKGOOD');
+ var url = "http://www.becontentcity.com/mobile/menus/good.html";
+ window.open(url, '_blank');
+        });
+
+//PARTY 
+
+        var party = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 700, 700),material1
+        );
+        party.cursor = 'pointer';
+        party.position.y = 0;
+        party.position.z = -3750;
+        party.position.x = 1250;
+        party.name = 'party';
+        this.scene.add( party );
+        party.on('touchend', function(ev) {
+          console.log('CLICKPARTY');
+ var url = "http://www.becontentcity.com/mobile/menus/party.html";
+ window.open(url, '_blank');
+        });
+
+//SQUARE 
+
+    //     var square = new THREE.Mesh(
+    //       new THREE.BoxGeometry(1400, 700, 700),material1
+    //     );
+    //     square.cursor = 'pointer';
+    //     square.position.y = 0;
+    //     square.position.z = -3750;
+    //     square.position.x = -250;
+    //     square.name = 'square';
+    //     this.scene.add( square );
+    //     square.on('touchend', function(ev) {
+    //       console.log('CLICKSQUARE');
+    // $("#squaremenu").fadeIn(600);
+    //     });
+
+    //     $( "#squareclose" ).click(function() {
+    //     	$("#squaremenu").fadeOut(500);
+    //     });
+
+//HFW 
+
+        var hfw = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 700, 700),material1
+        );
+        hfw.cursor = 'pointer';
+        hfw.position.y = 0;
+        hfw.position.z = -2750;
+        hfw.position.x = 2750;
+        hfw.name = 'hfw';
+        this.scene.add( hfw );
+        hfw.on('touchend', function(ev) {
+          console.log('CLICKHFW');
+ var url = "http://www.becontentcity.com/mobile/menus/hfw.html";
+ window.open(url, '_blank');
+        });
+
+//SOFA 
+
+        var sofa = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 900, 700),material1
+        );
+        sofa.cursor = 'pointer';
+        sofa.position.y = 0;
+        sofa.position.z = -3750;
+        sofa.position.x = 4500;
+        sofa.name = 'barbs';
+        this.scene.add( sofa );
+        sofa.on('touchend', function(ev) {
+          console.log('CLICKSOFA');
+ var url = "http://www.becontentcity.com/mobile/menus/sofa.html";
+ window.open(url, '_blank');
+        });
+
+//BARBS 
+
+        var barbs = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 700, 700),material1
+        );
+        barbs.cursor = 'pointer';
+        barbs.position.y = 0;
+        barbs.position.z = -2750;
+        barbs.position.x = 4000;
+        barbs.name = 'barbs';
+        this.scene.add( barbs );
+        barbs.on('touchend', function(ev) {
+          console.log('CLICKBARBS');
+ var url = "http://www.becontentcity.com/mobile/menus/barbs.html";
+ window.open(url, '_blank');
+        });
+
+//HI 
+
+        var hi = new THREE.Mesh(
+          new THREE.BoxGeometry(800, 5000, 800),material1
+        );
+        hi.cursor = 'pointer';
+        hi.position.y = 0;
+        hi.position.z = -5000;
+        hi.position.x = 1700;
+        hi.name = 'hi';
+        this.scene.add( hi );
+        hi.on('touchend', function(ev) {
+          console.log('CLICKHI');
+ var url = "http://www.becontentcity.com/mobile/menus/hi.html";
+ window.open(url, '_blank');
+        });
+
+//TERY 
+
+        var tery = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 700, 700),material1
+        );
+        tery.cursor = 'pointer';
+        tery.position.y = 0;
+        tery.position.z = -6900;
+        tery.position.x = 850;
+        tery.name = 'tery';
+        this.scene.add( tery );
+        tery.on('touchend', function(ev) {
+          console.log('CLICKTERY');
+ var url = "http://www.becontentcity.com/mobile/menus/tery.html";
+ window.open(url, '_blank');
+        });
+
+//MEAN 
+
+        var mean = new THREE.Mesh(
+          new THREE.BoxGeometry(1500, 1500, 1000),material1
+        );
+        mean.cursor = 'pointer';
+        mean.position.y = 0;
+        mean.position.z = -5500;
+        mean.position.x = -250;
+        mean.name = 'square';
+        this.scene.add( mean );
+        mean.on('touchend', function(ev) {
+          console.log('CLICKMEAN');
+ var url = "http://www.becontentcity.com/mobile/menus/mean.html";
+ window.open(url, '_blank');
+        });
+
+//HEAVY 
+
+        var heavy = new THREE.Mesh(
+          new THREE.BoxGeometry(750, 1500, 500),material1
+        );
+        heavy.cursor = 'pointer';
+        heavy.position.y = 0;
+        heavy.position.z = -6700;
+        heavy.position.x = 3500;
+        heavy.name = 'heavy';
+        this.scene.add( heavy );
+        heavy.on('touchend', function(ev) {
+          console.log('CLICKHEAVY');
+ var url = "http://www.becontentcity.com/mobile/menus/heavy.html";
+ window.open(url, '_blank');
+        });
+
+//PRO 
+
+        var pro = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 1500, 500),material1
+        );
+        pro.cursor = 'pointer';
+        pro.position.y = 0;
+        pro.position.z = -7550;
+        pro.position.x = 3600;
+        pro.name = 'pro';
+        this.scene.add( pro );
+        pro.on('touchend', function(ev) {
+          console.log('CLICKPRO');
+ var url = "http://www.becontentcity.com/mobile/menus/pro.html";
+ window.open(url, '_blank');
+        });
+
+//BEING
+
+        var being = new THREE.Mesh(
+          new THREE.BoxGeometry(700, 700, 700),material1
+        );
+        being.cursor = 'pointer';
+        being.position.y = 0;
+        being.position.z = -2550;
+        being.position.x = -500;
+        being.name = 'being';
+        this.scene.add( being );
+        being.on('touchend', function(ev) {
+          console.log('CLICKBEING');
+ var url = "http://www.becontentcity.com/mobile/menus/being.html";
+ window.open(url, '_blank');
+        });
+
+// - - - - - - - 
+
+				},
+
+				_reportProgress: function( event ) {
+					var output = THREE.LoaderSupport.Validator.verifyInput( event.detail.text, 'donedone' );
+					console.log( 'Progress: ' + output );
+					document.getElementById( 'feedback' ).innerHTML = output;
+				},
+
+				resizeDisplayGL: function () {
+					this.controls.handleResize();
+
+					this.recalcAspectRatio();
+					this.renderer.setSize( this.canvas.offsetWidth, this.canvas.offsetHeight, false );
+
+					this.updateCamera();
+				},
+
+				recalcAspectRatio: function () {
+					this.aspectRatio = ( this.canvas.offsetHeight === 0 ) ? 1 : this.canvas.offsetWidth / this.canvas.offsetHeight;
+				},
+
+				resetCamera: function () {
+					this.camera.position.copy( this.cameraDefaults.posCamera );
+					this.cameraTarget.copy( this.cameraDefaults.posCameraTarget );
+
+					this.updateCamera();
+				},
+
+				updateCamera: function () {
+					this.camera.aspect = this.aspectRatio;
+					this.camera.lookAt( this.cameraTarget );
+					this.camera.updateProjectionMatrix();
+
+				},
+
+				render: function () {
+					if ( ! this.renderer.autoClear ) this.renderer.clear();
+					this.controls.update();
+					this.renderer.render( this.scene, this.camera );
+					this.renderer.setClearColor (0xF0E4E1, 1);
+				}
+
+			};
+
+			var app = new OBJLoader2Example( document.getElementById( 'example' ) );
+
+			var resizeWindow = function () {
+				app.resizeDisplayGL();
+			};
+
+			var render = function () {
+				requestAnimationFrame( render );
+				app.render();
+
+			};
+
+			window.addEventListener( 'resize', resizeWindow, false );
+
+			console.log( 'Starting initialisation phase...' );
+			app.initGL();
+			app.resizeDisplayGL();
+			app.initContent();
+
+			render();
+
+		</script>
+	</body>
+</html>

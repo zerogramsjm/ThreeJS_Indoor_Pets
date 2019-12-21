@@ -1,0 +1,100 @@
+/* MENU WORK */
+/* MENU WORK */
+/* MENU WORK */
+
+.menu{
+  position: fixed;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  z-index: 1000;
+  background-color: #EAD9D1;
+  display: none;
+  text-align: center;
+  padding-top: 200px;
+  font-size: 20px;
+}
+
+a {
+  color: inherit; /* blue colors for links too */
+  text-decoration: inherit; /* no underline */
+}
+
+.menu img{
+  margin: 0;
+  position: absolute;
+  top: 100px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.menu a{
+  text-decoration: none;
+}
+
+.menu p{
+  margin: 0;
+  position: absolute;
+  padding-bottom: 10px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+@font-face {
+  font-family: heavyfont;
+  src: url(fonts/heavy.otf);
+}
+@font-face {
+  font-family: hfwfont;
+  src: url(fonts/hfw.ttf);
+}
+@font-face {
+  font-family: smgfont;
+  src: url(fonts/smg.otf);
+}
+@font-face {
+  font-family: teryfont;
+  src: url(fonts/tery.otf);
+}
+@font-face {
+  font-family: heavyfont;
+  src: url(fonts/heavy.otf);
+}
+@font-face {
+  font-family: strangefont;
+  src: url(fonts/strange.ttc);
+}
+@font-face {
+  font-family: barbsfont;
+  src: url(fonts/barbs.otf);
+}
+@font-face {
+  font-family: sofafont;
+  src: url(fonts/sofa.ttf);
+}
+@font-face {
+  font-family: partyfont;
+  src: url(fonts/party.ttf);
+}
+@font-face {
+  font-family: squarefont;
+  src: url(fonts/sqaure.otf);
+}
+@font-face {
+  font-family: profont;
+  src: url(fonts/pro.otf);
+}
+@font-face {
+  font-family: goodfont;
+  src: url(fonts/good.otf);
+}
+@font-face {
+  font-family: beingfont;
+  src: url(fonts/being.otf);
+}
+@font-face {
+font-family: 'cutiefont';
+font-style: normal;
+font-weight: normal;
+src: local('DymaxionScript'), url('fonts/DYMAXION.woff') format('woff');
+}
